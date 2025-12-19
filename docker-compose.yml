@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dummybank-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+    networks:
+      - dummybank-network
+    restart: unless-stopped
+
+  frontend-streamlit:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dummybank-streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - dummybank-network
+    restart: unless-stopped
+
+  frontend-static:
+    image: nginx:alpine
+    container_name: dummybank-static
+    ports:
+      - "8080:80"
+    volumes:
+      - ./static:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - dummybank-network
+    restart: unless-stopped
+
+networks:
+  dummybank-network:
+    driver: bridge
