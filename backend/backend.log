@@ -1,0 +1,30 @@
+/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+INFO:     Started server process [96042]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     ('127.0.0.1', 64178) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 64179) - "WebSocket /ws" [accepted]
+INFO:     connection open
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+🔑 Initializing Vertex AI Gemini...
+   Project: gigshield
+   Location: us-central1
+✅ Successfully initialized Vertex AI gemini-2.5-pro
+INFO:     127.0.0.1:64191 - "GET / HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 64256) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 64262) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 64278) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 64285) - "WebSocket /ws" [accepted]
+INFO:     connection open
