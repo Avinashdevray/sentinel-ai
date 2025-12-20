@@ -39,6 +39,12 @@ class UserRegister(BaseModel):
     email: str
     password: str
     full_name: str
+    mobile_number: Optional[str] = None
+
+class UserUpdate(BaseModel):
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    mobile_number: Optional[str] = None
 
 class UserLogin(BaseModel):
     username: str
@@ -126,7 +132,8 @@ def init_dummy_data():
         "username": "demo",
         "email": "demo@dummybank.com",
         "password": hash_password("demo123"),
-        "full_name": "Demo User"
+        "full_name": "Demo User",
+        "mobile_number": "9876543210"
     }
     
     # Initialize investments for demo user
@@ -182,7 +189,8 @@ def register(user: UserRegister):
         "username": user.username,
         "email": user.email,
         "password": hash_password(user.password),
-        "full_name": user.full_name
+        "full_name": user.full_name,
+        "mobile_number": user.mobile_number
     }
     investments_db[user_id] = {"gold_grams": 0.0, "mutual_funds": []}
     
@@ -373,6 +381,22 @@ def get_profile(user_id: str = Depends(verify_token)):
     user = users_db[user_id].copy()
     user.pop("password")
     return {"user": user}
+
+@app.put("/api/user/profile")
+def update_profile(update_data: UserUpdate, user_id: str = Depends(verify_token)):
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user = users_db[user_id]
+    
+    if update_data.email:
+        user["email"] = update_data.email
+    if update_data.full_name:
+        user["full_name"] = update_data.full_name
+    if update_data.mobile_number:
+        user["mobile_number"] = update_data.mobile_number
+        
+    return {"message": "Profile updated successfully", "user": user}
 
 # Investment Routes
 @app.get("/api/market/gold-price")

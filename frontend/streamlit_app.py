@@ -104,6 +104,8 @@ def api_request(endpoint, method="GET", data=None):
             response = requests.get(url, headers=headers)
         elif method == "POST":
             response = requests.post(url, json=data, headers=headers)
+        elif method == "PUT":
+            response = requests.put(url, json=data, headers=headers)
         
         if response.status_code == 200:
             return response.json()
@@ -117,6 +119,12 @@ def api_request(endpoint, method="GET", data=None):
     except Exception as e:
         st.error(f"Connection error: {str(e)}")
         return None
+    
+def get_user_profile():
+    return api_request("/api/user/profile")
+
+def update_user_profile(data):
+    return api_request("/api/user/profile", "PUT", data)
 
 # WebSocket Helper (Simplified for Streamlit)
 def convert_currency(amount_usd):
@@ -163,6 +171,7 @@ def login_page():
             new_username = st.text_input("Username")
             new_email = st.text_input("Email")
             new_full_name = st.text_input("Full Name")
+            new_mobile = st.text_input("Mobile Number")
             new_password = st.text_input("Password", type="password")
             new_password_confirm = st.text_input("Confirm Password", type="password")
             submit_register = st.form_submit_button("Register", use_container_width=True)
@@ -177,6 +186,7 @@ def login_page():
                         "username": new_username,
                         "email": new_email,
                         "full_name": new_full_name,
+                        "mobile_number": new_mobile,
                         "password": new_password
                     })
                     
@@ -266,15 +276,34 @@ def dashboard_page():
                         st.rerun()
         
         with col3:
+            st.markdown("### 🔄 Transfer")
+            
+            # Using session state to handle button clicks filling the input
+            if 'transfer_to' not in st.session_state:
+                st.session_state.transfer_to = ""
+            
+            # Favorites (Outside Form)
+            st.write("Favorites:")
+            col_fav1, col_fav2 = st.columns(2)
+            
+            if col_fav1.button("❤️ Mom", use_container_width=True):
+                st.session_state.transfer_to = "ACCMOM123"
+            if col_fav2.button("💙 Dad", use_container_width=True):
+                st.session_state.transfer_to = "ACCDAD456"
+
             with st.form("transfer_form"):
-                st.markdown("### 🔄 Transfer")
                 from_account = st.selectbox("From Account", [acc["account_number"] for acc in accounts], key="from_acc")
-                to_account = st.text_input("To Account Number", key="to_acc")
+                
+                # Input defaults to session state value
+                to_account = st.text_input("To Account Number", value=st.session_state.transfer_to, key="to_acc_input")
+                
                 amount = st.number_input(f"Amount ({currency_view})", min_value=0.01, step=0.01, key="transfer_amt")
                 description = st.text_input("Description (optional)", key="transfer_desc")
                 
                 if st.form_submit_button("Transfer", use_container_width=True):
-                    if not to_account:
+                    # Use the widget value directly
+                    final_to_account = to_account
+                    if not final_to_account:
                         st.error("Please enter a destination account number.")
                     else:
                         # Convert to USD for backend if INR selected
@@ -282,7 +311,7 @@ def dashboard_page():
 
                         response = api_request("/api/transfer", "POST", {
                             "from_account": from_account,
-                            "to_account": to_account,
+                            "to_account": final_to_account,
                             "amount": amount_usd,
                             "description": description
                         })
@@ -374,51 +403,59 @@ def bill_payments_page():
         "Subscriptions": ["Netflix", "Amazon Prime", "Hotstar", "Spotify"]
     }
     
-    tab1, tab2, tab3 = st.tabs(["Quick Pay / Search", "QR Scanner", "Bulk Pay"])
+    # Auto-fill logic based on category
+    user_consumer_data = {
+        "Utilities": "1234567890",
+        "Credit Cards": "4321 8765 2109 5678",
+        "Insurance": "POL-98765432",
+        "Subscriptions": "user@subscription.com"
+    }
+
+    st.markdown("### Quick Pay")
+    col_search, col_pay = st.columns([1, 2])
     
-    # --- Tab 1: Search & Quick Pay ---
-    with tab1:
-        col_search, col_pay = st.columns([1, 2])
+    with col_search:
+        biller_name = st.selectbox("Select Biller", billers.get(selected_cat, []))
         
-        with col_search:
-            biller_name = st.selectbox("Select Biller", billers.get(selected_cat, []))
-            consumer_id = st.text_input("Consumer Number / Policy No / Mobile")
-            
-            # Fetch Bill button
-            if st.button("Fetch Bill", use_container_width=True):
-                if consumer_id:
-                    st.session_state.fetched_bill = True
-                    # Mock bill amounts based on biller
-                    bill_amounts = {
-                        "BESCOM (Electricity)": random.randint(800, 2500),
-                        "BWSSB (Water)": random.randint(300, 800),
-                        "Indane Gas": random.randint(600, 1200),
-                        "Mahanagar Gas": random.randint(500, 1500),
-                        "HDFC Bank CC": random.randint(5000, 25000),
-                        "SBI Card": random.randint(3000, 20000),
-                        "ICICI Bank CC": random.randint(4000, 22000),
-                        "Amex": random.randint(8000, 35000),
-                        "LIC": random.randint(2000, 8000),
-                        "HDFC Life": random.randint(1500, 6000),
-                        "ICICI Prudential": random.randint(1800, 7000),
-                        "Star Health": random.randint(2500, 9000),
-                        "Netflix": 649,
-                        "Amazon Prime": 1499,
-                        "Hotstar": 1499,
-                        "Spotify": 119
-                    }
-                    st.session_state.bill_amount = bill_amounts.get(biller_name, 500.0)
-                    st.session_state.due_date = "2025-12-25"
-                else:
-                    st.error("Please enter Consumer Number first")
-            
-            # Show fetched bill details
-            if st.session_state.get('fetched_bill', False):
-                st.success("✅ Bill Fetched Successfully!")
-                st.info(f"**Bill Amount:** ₹{st.session_state.bill_amount:,.2f}")
-                st.info(f"**Due Date:** {st.session_state.due_date}")
-            
-        with col_pay:
+        # Auto-fill default value
+        default_consumer_id = user_consumer_data.get(selected_cat, "")
+        consumer_id = st.text_input("Consumer Number / Policy No / Mobile", value=default_consumer_id)
+        
+        # Fetch Bill button
+        if st.button("Fetch Bill", use_container_width=True):
+            if consumer_id:
+                st.session_state.fetched_bill = True
+                # Mock bill amounts based on biller
+                bill_amounts = {
+                    "BESCOM (Electricity)": random.randint(800, 2500),
+                    "BWSSB (Water)": random.randint(300, 800),
+                    "Indane Gas": random.randint(600, 1200),
+                    "Mahanagar Gas": random.randint(500, 1500),
+                    "HDFC Bank CC": random.randint(5000, 25000),
+                    "SBI Card": random.randint(3000, 20000),
+                    "ICICI Bank CC": random.randint(4000, 22000),
+                    "Amex": random.randint(8000, 35000),
+                    "LIC": random.randint(2000, 8000),
+                    "HDFC Life": random.randint(1500, 6000),
+                    "ICICI Prudential": random.randint(1800, 7000),
+                    "Star Health": random.randint(2500, 9000),
+                    "Netflix": 649,
+                    "Amazon Prime": 1499,
+                    "Hotstar": 1499,
+                    "Spotify": 119
+                }
+                st.session_state.bill_amount = bill_amounts.get(biller_name, 500.0)
+                st.session_state.due_date = "2025-12-25"
+            else:
+                st.error("Please enter Consumer Number first")
+        
+        # Show fetched bill details
+        if st.session_state.get('fetched_bill', False):
+            st.success("✅ Bill Fetched Successfully!")
+            st.info(f"**Bill Amount:** ₹{st.session_state.bill_amount:,.2f}")
+            st.info(f"**Due Date:** {st.session_state.due_date}")
+        
+    with col_pay:
              with st.form("bill_pay_form"):
                 st.write(f"Paying **{biller_name}**")
                 pay_account = st.selectbox("Pay From", [acc["account_number"] for acc in accounts], format_func=lambda x: f"{x} (Bal: ₹{convert_currency(next((a['balance'] for a in accounts if a['account_number'] == x), 0)):,.2f})")
@@ -449,62 +486,53 @@ def bill_payments_page():
                             time.sleep(2)
                             st.rerun()
 
-    # --- Tab 2: QR Scanner ---
-    with tab2:
-        st.info("Point your camera at a BharatQR or UPI QR code")
-        # Placeholder for camera input - using toggle to simulate scan
-        if st.toggle("Activate Camera"):
-            st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png", width=300, caption="Simulated Scan...")
-            st.success("QR Code Detected: Merchant: 'Fresh Mart Grocery'")
-            if st.button("Pay ₹450.00 to Fresh Mart"):
-                # Hardcoded pay logic for demo
-                amount_usd = 450.00 / USD_TO_INR
-                pay_account = accounts[0]["account_number"]
-                response = api_request("/api/withdraw", "POST", {
-                    "account_number": pay_account,
-                    "amount": amount_usd,
-                    "description": "Bill Payment: Fresh Mart Grocery (QR)"
-                })
-                if response:
-                    st.success("Payment Successful!")
-                    time.sleep(2)
-                    st.rerun()
+def profile_page():
+    """User Profile Page"""
+    st.markdown("<h1 class='main-header'>👤 My Profile</h1>", unsafe_allow_html=True)
+    
+    profile_data = get_user_profile()
+    if profile_data and "user" in profile_data:
+        user = profile_data["user"]
+        
+        with st.container():
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.image("https://img.icons8.com/color/480/user-male-circle--v1.png", width=150)
+                st.markdown(f"### {user.get('username', 'User')}")
+            
+            with col2:
+                st.subheader("Personal Details")
+                
+                with st.form("profile_update_form"):
+                    full_name = st.text_input("Full Name", value=user.get("full_name", ""))
+                    email = st.text_input("Email", value=user.get("email", ""))
+                    mobile = st.text_input("Mobile Number", value=user.get("mobile_number", ""))
+                    
+                    if st.form_submit_button("Update Profile", use_container_width=True):
+                        # Move response variable initialization here
+                        response = None
+                        response = update_user_profile({
+                            "full_name": full_name,
+                            "email": email,
+                            "mobile_number": mobile
+                        })
+                        
+                        if response:
+                            st.success("✅ Profile Updated Successfully!")
+                            time.sleep(1)
+                            st.rerun()
+                            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+        # Account Details Section
+        st.subheader("Account Details")
+        accounts_data = api_request("/api/accounts")
+        if accounts_data and accounts_data.get("accounts"):
+             for account in accounts_data["accounts"]:
+                st.info(f"🏦 Account Number: **{account['account_number']}** ({account['account_type']})")
 
-    # --- Tab 3: Bulk Pay ---
-    with tab3:
-        st.write("Select pending bills to pay instantly")
-        
-        # Mock Pending Bills
-        pending = pd.DataFrame({
-            "Biller": ["BESCOM", "Netflix", "HDFC CC"],
-            "Due Date": ["2025-12-25", "2025-12-28", "2025-12-30"],
-            "Amount (₹)": [1250.00, 649.00, 15400.00],
-            "Pay": [False, False, False]
-        })
-        
-        edited_df = st.data_editor(pending)
-        
-        if st.button("Pay Selected Bills"):
-            # Simple simulation
-            to_pay = edited_df[edited_df["Pay"] == True]
-            if not to_pay.empty:
-                total_inr = to_pay["Amount (₹)"].sum()
-                total_usd = total_inr / USD_TO_INR
-                pay_account = accounts[0]["account_number"]
-                billers_list = ", ".join(to_pay["Biller"].tolist())
-                
-                response = api_request("/api/withdraw", "POST", {
-                    "account_number": pay_account,
-                    "amount": total_usd,
-                    "description": f"Bulk Bill Payment: {billers_list}"
-                })
-                
-                if response:
-                    st.success(f"✅ Paid Total: ₹{total_inr:.2f} for {len(to_pay)} bills!")
-                    time.sleep(2)
-                    st.rerun()
-            else:
-                st.warning("No bills selected")
 
 def investment_page():
     """Investment Page"""
@@ -660,7 +688,7 @@ def main():
         if st.session_state.token:
             st.success(f"Logged in as: {st.session_state.username}")
             
-            nav = st.radio("Navigation", ["Dashboard", "Bill Payments", "Investments"])
+            nav = st.radio("Navigation", ["Dashboard", "Bill Payments", "Investments", "Profile"])
             
             st.divider()
             
@@ -682,6 +710,8 @@ def main():
             investment_page()
         elif nav == "Bill Payments":
             bill_payments_page()
+        elif nav == "Profile":
+            profile_page()
     else:
         login_page()
 
