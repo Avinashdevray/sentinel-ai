@@ -174,7 +174,7 @@ EXAMPLES:
 - Loading spinner visible: {"action": "wait", "selector": null, "reasoning": "Page is loading, waiting for completion", "risk_level": "LOW", "confidence": 0.8}
 """
     
-    def analyze_screenshot(self, screenshot_base64: str, task: str, current_url: str = "") -> AgentAction:
+    def analyze_screenshot(self, screenshot_base64: str, task: str, current_url: str = "", recent_actions: list = None) -> AgentAction:
         """
         Analyze a screenshot and determine the next action using Vertex AI Gemini.
         Includes robust JSON parsing with markdown stripping.
@@ -183,6 +183,7 @@ EXAMPLES:
             screenshot_base64: Base64 encoded screenshot
             task: The task the agent is trying to accomplish
             current_url: Current page URL for context
+            recent_actions: List of recent actions taken (for context)
             
         Returns:
             AgentAction object with the next action to take
@@ -191,11 +192,17 @@ EXAMPLES:
             from langchain.schema import HumanMessage
             import re
             
+            # Add recent actions to prompt if available
+            action_context = ""
+            if recent_actions:
+                action_context = "\n\nRECENT ACTIONS TAKEN:\n" + "\n".join(recent_actions)
+                action_context += "\n\n⚠️ IMPORTANT: Do NOT repeat the same action. If you just clicked something, the page should have changed. Look for new elements or fields that appeared."
+            
             # Construct the prompt
             user_prompt = f"""{self.system_prompt}
 
 USER TASK: {task}
-CURRENT URL: {current_url}
+CURRENT URL: {current_url}{action_context}
 
 Analyze the image and provide the JSON response."""
             

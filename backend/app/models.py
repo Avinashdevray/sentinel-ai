@@ -41,6 +41,15 @@ class AgentState(BaseModel):
     max_retries: int = 3
 
 
+class ValidationResult(BaseModel):
+    """Result of logic validation"""
+    is_valid: bool
+    extracted_balance: Optional[str] = None
+    calculated_amount: Optional[float] = None
+    error_message: Optional[str] = None
+    validation_type: Optional[str] = None  # "affordability", "percentage", "amount"
+
+
 class TaskRequest(BaseModel):
     """Request to execute a task"""
     task: str

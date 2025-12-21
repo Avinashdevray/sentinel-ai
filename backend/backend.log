@@ -2,29 +2,313 @@
   warnings.warn(
 /Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
   warnings.warn(message, FutureWarning)
-INFO:     Started server process [96042]
+INFO:     Started server process [2239]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     ('127.0.0.1', 64178) - "WebSocket /ws" [accepted]
+INFO:     ('127.0.0.1', 50446) - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     ('127.0.0.1', 64179) - "WebSocket /ws" [accepted]
+INFO:     ('127.0.0.1', 50449) - "WebSocket /ws" [accepted]
 INFO:     connection open
-An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
-🔑 Initializing Vertex AI Gemini...
-   Project: gigshield
-   Location: us-central1
-✅ Successfully initialized Vertex AI gemini-2.5-pro
-INFO:     127.0.0.1:64191 - "GET / HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     connection closed
-INFO:     ('127.0.0.1', 64256) - "WebSocket /ws" [accepted]
+INFO:     ('127.0.0.1', 50450) - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     ('127.0.0.1', 64262) - "WebSocket /ws" [accepted]
+INFO:     ('127.0.0.1', 50452) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 50468) - "WebSocket /ws" [accepted]
 INFO:     connection open
 INFO:     connection closed
+INFO:     ('127.0.0.1', 50470) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 50475) - "WebSocket /ws" [accepted]
+INFO:     connection open
 INFO:     connection closed
-INFO:     ('127.0.0.1', 64278) - "WebSocket /ws" [accepted]
+INFO:     connection closed
+INFO:     ('127.0.0.1', 50495) - "WebSocket /ws" [accepted]
+INFO:     connection closed
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 330, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 628, in send
+    await self.ensure_open()
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 929, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 85, in send
+    await self._send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 48, in sender
+    await send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 343, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 242, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 93, in app
+    await func(session)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "/Users/avinashdevray/finagent_sentinel/backend/app/main.py", line 239, in websocket_endpoint
+    await websocket.send_json({
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+INFO:     ('127.0.0.1', 50497) - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     ('127.0.0.1', 64285) - "WebSocket /ws" [accepted]
+INFO:     ('127.0.0.1', 50499) - "WebSocket /ws" [accepted]
 INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 50594) - "WebSocket /ws" [accepted]
+INFO:     connection closed
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 330, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 628, in send
+    await self.ensure_open()
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 929, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 85, in send
+    await self._send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 48, in sender
+    await send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 343, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 242, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 93, in app
+    await func(session)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "/Users/avinashdevray/finagent_sentinel/backend/app/main.py", line 239, in websocket_endpoint
+    await websocket.send_json({
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+INFO:     ('127.0.0.1', 50596) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 50599) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     connection closed
+INFO:     ('127.0.0.1', 50628) - "WebSocket /ws" [accepted]
+INFO:     connection closed
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 330, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 628, in send
+    await self.ensure_open()
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 929, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 85, in send
+    await self._send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 48, in sender
+    await send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 343, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 242, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 93, in app
+    await func(session)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "/Users/avinashdevray/finagent_sentinel/backend/app/main.py", line 239, in websocket_endpoint
+    await websocket.send_json({
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+INFO:     ('127.0.0.1', 50630) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 50632) - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     ('127.0.0.1', 50736) - "WebSocket /ws" [accepted]
+INFO:     connection closed
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 330, in asgi_send
+    await self.send(data)  # type: ignore[arg-type]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 628, in send
+    await self.ensure_open()
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 929, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 85, in send
+    await self._send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 48, in sender
+    await send(message)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 343, in asgi_send
+    raise ClientDisconnected from exc
+uvicorn.protocols.utils.ClientDisconnected
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/protocols/websockets/websockets_impl.py", line 242, in run_asgi
+    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/errors.py", line 152, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/cors.py", line 77, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 715, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 735, in app
+    await route.handle(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 362, in handle
+    await self.app(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 95, in app
+    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 62, in wrapped_app
+    raise exc
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/_exception_handler.py", line 51, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/routing.py", line 93, in app
+    await func(session)
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/fastapi/routing.py", line 383, in app
+    await dependant.call(**solved_result.values)
+  File "/Users/avinashdevray/finagent_sentinel/backend/app/main.py", line 239, in websocket_endpoint
+    await websocket.send_json({
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 175, in send_json
+    await self.send({"type": "websocket.send", "text": text})
+  File "/Users/avinashdevray/finagent_sentinel/backend/venv/lib/python3.9/site-packages/starlette/websockets.py", line 88, in send
+    raise WebSocketDisconnect(code=1006)
+starlette.websockets.WebSocketDisconnect
+INFO:     ('127.0.0.1', 50738) - "WebSocket /ws" [accepted]

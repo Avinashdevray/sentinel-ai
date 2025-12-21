@@ -6,6 +6,6 @@ langchain==0.3.7
 langchain-google-vertexai==2.0.8
 langgraph==0.2.45
 playwright==1.48.0
-pydantic==2.10.2
+pydantic==2.9.2
 pydantic-settings==2.6.1
 pillow==11.0.0

@@ -29,6 +29,28 @@ function App() {
                 setLogMessages(prev => [...prev, latestMessage.data.message]);
                 break;
 
+            case 'SESSION_RESTORED':
+                console.log('🔄 Session restored:', latestMessage.data);
+                // Restore task status
+                if (latestMessage.data.status) {
+                    setTaskStatus(latestMessage.data.status.toLowerCase());
+                }
+                // Show restoration notification
+                setLogMessages(prev => [...prev, '🔄 Session restored - reconnected successfully']);
+                // If waiting for approval, show modal
+                if (latestMessage.data.waiting_for_approval) {
+                    setShowApprovalModal(true);
+                    setTaskStatus('paused');
+                }
+                break;
+
+            case 'SESSION_EXPIRED':
+                console.log('⚠️ Session expired');
+                setLogMessages(prev => [...prev, '⚠️ Previous session expired - starting fresh']);
+                setTaskStatus('idle');
+                setIsRunning(false);
+                break;
+
             case 'APPROVAL_REQ':
                 setShowApprovalModal(true);
                 setApprovalData(latestMessage.data);

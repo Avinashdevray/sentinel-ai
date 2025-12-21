@@ -1,12 +1,14 @@
 import asyncio
 import base64
 import time
-from typing import TypedDict, Annotated, Literal
+from typing import TypedDict, Annotated, Literal, Optional
 from langgraph.graph import StateGraph, END
 from playwright.async_api import async_playwright, Page, Browser
 from app.brain import get_brain
 from app.models import AgentAction, ActionType, RiskLevel
 from app.utils import encode_image_to_base64, resize_image_if_needed
+from app.validator import LogicValidator
+from app.exceptions import InsufficientFundsError, InvalidAmountError, BalanceExtractionError
 import operator
 
 
@@ -24,6 +26,8 @@ class GraphState(TypedDict):
     browser_handle: object  # Will store the browser instance
     message_callback: object  # Callback function to send messages in real-time
     tried_login_methods: list  # Track which login methods have been tried
+    extracted_balance: Optional[str]  # Balance extracted from page for validation
+    validation_passed: bool  # Whether validation passed
 
 
 class FinAgentGraph:
@@ -33,6 +37,7 @@ class FinAgentGraph:
     
     def __init__(self):
         self.brain = get_brain()
+        self.validator = LogicValidator()
         self.graph = self._build_graph()
         self.playwright = None
         self.browser = None
@@ -44,6 +49,7 @@ class FinAgentGraph:
         # Add nodes
         workflow.add_node("navigator", self.navigator_node)
         workflow.add_node("brain", self.brain_node)
+        workflow.add_node("logic_validator", self.logic_validator_node)  # NEW: Validator node
         workflow.add_node("safety_valve", self.safety_valve_node)
         workflow.add_node("executor", self.executor_node)
         
@@ -52,7 +58,17 @@ class FinAgentGraph:
         
         # Add edges
         workflow.add_edge("navigator", "brain")
-        workflow.add_edge("brain", "safety_valve")
+        workflow.add_edge("brain", "logic_validator")  # NEW: Brain -> Validator
+        
+        # Conditional edges from validator
+        workflow.add_conditional_edges(
+            "logic_validator",
+            self.route_from_validator,
+            {
+                "safety_valve": "safety_valve",  # Validation passed
+                "error": END  # Validation failed
+            }
+        )
         
         # Conditional edges from safety_valve
         workflow.add_conditional_edges(
@@ -130,20 +146,59 @@ class FinAgentGraph:
         try:
             await self._send_message(state, "🧠 Analyzing screenshot with Gemini Vision...")
             
+            # Get recent action history for context (last 3 actions)
+            recent_actions = []
+            if state.get("next_action"):
+                prev_action = state["next_action"]
+                action_desc = f"{prev_action.get('action')} on {prev_action.get('selector') or prev_action.get('value')}"
+                recent_actions.append(f"Previous action: {action_desc}")
+            
             action = self.brain.analyze_screenshot(
                 screenshot_base64=state["screenshot"],
                 task=state["task"],
-                current_url=state["current_url"]
+                current_url=state["current_url"],
+                recent_actions=recent_actions
             )
             
             # Check if this is the same action as last time (stuck in loop)
             prev_action = state.get("next_action") or {}
-            if (prev_action.get("action") == action.action.value and 
-                prev_action.get("action") == "press" and 
-                prev_action.get("value") == action.value):
-                # Same press action repeated - increment retry
+            current_action_type = action.action.value
+            current_selector = action.selector
+            current_value = action.value
+            
+            prev_action_type = prev_action.get("action")
+            prev_selector = prev_action.get("selector")
+            prev_value = prev_action.get("value")
+            
+            # Detect repeated actions (both click and press)
+            is_repeated_action = False
+            if current_action_type == prev_action_type:
+                if current_action_type == "click" and current_selector == prev_selector:
+                    # Same click action repeated
+                    is_repeated_action = True
+                elif current_action_type == "press" and current_value == prev_value:
+                    # Same press action repeated
+                    is_repeated_action = True
+            
+            if is_repeated_action:
                 state["retry_count"] += 1
-                self._send_message(state, f"⚠️ Repeated action detected (attempt {state['retry_count']})")
+                await self._send_message(state, f"⚠️ Repeated action detected: {current_action_type} on {current_selector or current_value} (attempt {state['retry_count']})")
+                
+                # If we've repeated the same action 2+ times, force a wait to let page update
+                if state["retry_count"] >= 2:
+                    await self._send_message(state, "🔄 Breaking loop: Forcing wait for page to update")
+                    action = AgentAction(
+                        action=ActionType.WAIT,
+                        selector=None,
+                        value=None,
+                        reasoning="Breaking out of repeated action loop - waiting for page to update",
+                        risk_level=RiskLevel.LOW,
+                        confidence=0.8
+                    )
+                    state["retry_count"] = 0  # Reset after forcing wait
+            else:
+                # Different action - reset retry count
+                state["retry_count"] = 0
             
             state["next_action"] = action.model_dump()
             await self._send_message(state,
@@ -157,6 +212,131 @@ class FinAgentGraph:
         except Exception as e:
             state["status"] = "ERROR"
             await self._send_message(state, f"❌ Brain error: {str(e)}")
+            return state
+    
+    async def logic_validator_node(self, state: GraphState) -> GraphState:
+        """
+        Node 2.5: NEURO-SYMBOLIC LOGIC VALIDATOR
+        
+        This node performs deterministic validation of financial actions:
+        1. Extracts balance from page (if needed)
+        2. Validates transaction amounts
+        3. Checks affordability constraints
+        4. Calculates percentage-based amounts
+        
+        This is the "Spock" layer - pure logic, no AI guessing.
+        """
+        try:
+            action = state["next_action"]
+            action_type = action.get("action")
+            
+            # Skip validation for non-financial actions
+            if action_type in ["wait", "done", "navigate"]:
+                state["validation_passed"] = True
+                await self._send_message(state, "✓ Non-financial action - validation skipped")
+                return state
+            
+            # Check if this is a financial action
+            if not self.validator.is_financial_action(action):
+                state["validation_passed"] = True
+                await self._send_message(state, "✓ Non-financial action - validation skipped")
+                return state
+            
+            await self._send_message(state, "🔍 Validating financial transaction...")
+            
+            # Extract balance from page (if not already extracted)
+            page = state.get("page_handle")
+            if page and not state.get("extracted_balance"):
+                try:
+                    balance_str = await self.validator.extract_balance_from_page(page)
+                    state["extracted_balance"] = balance_str
+                    await self._send_message(state, f"💰 Extracted balance: {balance_str}")
+                except BalanceExtractionError as e:
+                    # Balance extraction failed - this might be okay for non-payment pages
+                    await self._send_message(state, f"⚠️ Could not extract balance: {str(e)}")
+                    # Continue without validation if we can't find balance
+                    state["validation_passed"] = True
+                    return state
+            
+            # Extract transaction amount from action
+            amount = self.validator.extract_amount_from_action(action)
+            
+            if amount is None:
+                # No amount found - might be a navigation action
+                state["validation_passed"] = True
+                await self._send_message(state, "✓ No transaction amount detected - validation skipped")
+                return state
+            
+            await self._send_message(state, f"💵 Transaction amount: {amount}")
+            
+            # Check if amount is percentage-based
+            value_str = str(action.get("value", ""))
+            if "%" in value_str or "percent" in value_str.lower():
+                try:
+                    calculated_amount = self.validator.calculate_dynamic_amount(
+                        action,
+                        state["extracted_balance"]
+                    )
+                    await self._send_message(
+                        state,
+                        f"📊 Calculated {value_str} = {calculated_amount:.2f}"
+                    )
+                    amount = calculated_amount
+                except Exception as e:
+                    state["status"] = "ERROR"
+                    await self._send_message(state, f"❌ Percentage calculation failed: {str(e)}")
+                    state["validation_passed"] = False
+                    return state
+            
+            # Validate affordability
+            if state.get("extracted_balance"):
+                try:
+                    is_affordable, balance_decimal, amount_decimal = self.validator.validate_affordability(
+                        state["extracted_balance"],
+                        amount
+                    )
+                    
+                    if is_affordable:
+                        state["validation_passed"] = True
+                        await self._send_message(
+                            state,
+                            f"✅ Validation passed: {amount_decimal} ≤ {balance_decimal}"
+                        )
+                    else:
+                        # This shouldn't happen as validate_affordability raises exception
+                        state["status"] = "ERROR"
+                        state["validation_passed"] = False
+                        await self._send_message(state, "❌ Affordability check failed")
+                        
+                except InsufficientFundsError as e:
+                    state["status"] = "ERROR"
+                    state["validation_passed"] = False
+                    await self._send_message(
+                        state,
+                        f"❌ INSUFFICIENT FUNDS: Required {e.required_amount:.2f}, "
+                        f"Available {e.available_balance:.2f}"
+                    )
+                    return state
+                    
+                except InvalidAmountError as e:
+                    state["status"] = "ERROR"
+                    state["validation_passed"] = False
+                    await self._send_message(state, f"❌ INVALID AMOUNT: {str(e)}")
+                    return state
+            else:
+                # No balance available - proceed with caution
+                state["validation_passed"] = True
+                await self._send_message(
+                    state,
+                    "⚠️ Balance not available - proceeding without affordability check"
+                )
+            
+            return state
+            
+        except Exception as e:
+            state["status"] = "ERROR"
+            state["validation_passed"] = False
+            await self._send_message(state, f"❌ Validation error: {str(e)}")
             return state
     
     async def safety_valve_node(self, state: GraphState) -> GraphState:
@@ -300,6 +480,13 @@ class FinAgentGraph:
                 state["messages"].append("❌ Max retries exceeded")
             
             return state
+    
+    def route_from_validator(self, state: GraphState) -> str:
+        """Route from validator based on validation result"""
+        if state.get("status") == "ERROR" or not state.get("validation_passed", True):
+            return "error"
+        else:
+            return "safety_valve"
     
     def route_from_safety(self, state: GraphState) -> str:
         """Route from safety valve based on status"""
@@ -463,14 +650,16 @@ class FinAgentGraph:
             page_handle=page,
             browser_handle=browser,
             message_callback=message_callback,  # Store callback in state
-            tried_login_methods=[]  # Track login methods
+            tried_login_methods=[],  # Track login methods
+            extracted_balance=None,  # Balance for validation
+            validation_passed=True  # Default to true
         )
         
         try:
             # Run the graph with increased recursion limit
             final_state = await self.graph.ainvoke(
                 initial_state,
-                config={"recursion_limit": 75}  # Increased for longer tasks
+                config={"recursion_limit": 150}  # Increased for longer tasks
             )
             
             # Only cleanup if task is complete or errored, NOT if paused for approval
