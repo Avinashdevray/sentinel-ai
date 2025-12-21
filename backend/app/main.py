@@ -47,83 +47,72 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-def run_agent_task(session_id: str, task: str, start_url: str, loop):
+async def run_agent_task(session_id: str, task: str, start_url: str):
     """
-    Run the agent in a separate thread
-    This is a blocking operation that will pause when approval is needed
+    Run the agent (async version - no longer needs thread)
     """
     try:
         session = active_sessions[session_id]
         agent = session["agent"]
         
-        # Run the agent
-        final_state = agent.run(task, start_url)
+        # Define a callback to send messages in real-time
+        async def send_log(message: str):
+            """Send a log message to the frontend immediately"""
+            message_data = {
+                "type": "LOG",
+                "data": {"message": message},
+                "session_id": session_id
+            }
+            print(f"📤 Sending LOG message: {message}")  # Debug
+            await manager.send_message(session_id, message_data)
+        
+        # Run the agent with the callback (now async!)
+        final_state = await agent.run(task, start_url, message_callback=send_log)
         
         # Store the final state
         session["state"] = final_state
         session["status"] = final_state["status"]
         
-        # Send messages to frontend using the main event loop
-        for msg in final_state["messages"]:
-            asyncio.run_coroutine_threadsafe(
-                manager.send_message(
-                    session_id,
-                    {
-                        "type": "LOG",
-                        "data": {"message": msg},
-                        "session_id": session_id
-                    }
-                ),
-                loop
-            ).result()
+        # Messages are now sent in real-time via callback, no need to send them here
         
         # Check if we need approval
         if final_state["status"] == "PAUSED":
             # Send approval request
-            asyncio.run_coroutine_threadsafe(
-                manager.send_message(
-                    session_id,
-                    {
-                        "type": "APPROVAL_REQ",
-                        "data": {
-                            "screenshot": final_state["screenshot"],
-                            "action": final_state["next_action"],
-                            "current_url": final_state["current_url"]
-                        },
-                        "session_id": session_id
-                    }
-                ),
-                loop
-            ).result()
+            await manager.send_message(
+                session_id,
+                {
+                    "type": "APPROVAL_REQ",
+                    "data": {
+                        "screenshot": final_state["screenshot"],
+                        "action": final_state["next_action"],
+                        "current_url": final_state["current_url"]
+                    },
+                    "session_id": session_id
+                }
+            )
             
             # Wait for approval (will be handled by WebSocket message)
             session["waiting_for_approval"] = True
             
         elif final_state["status"] == "DONE":
-            asyncio.run_coroutine_threadsafe(
-                manager.send_message(
-                    session_id,
-                    {
-                        "type": "COMPLETE",
-                        "data": {"message": "Task completed successfully!"},
-                        "session_id": session_id
-                    }
-                ),
-                loop
-            ).result()
+            await manager.send_message(
+                session_id,
+                {
+                    "type": "COMPLETE",
+                    "data": {"message": "Task completed successfully!"},
+                    "session_id": session_id
+                }
+            )
             
         elif final_state["status"] == "ERROR":
-            asyncio.run_coroutine_threadsafe(
-                manager.send_message(
-                    session_id,
-                    {
-                        "type": "ERROR",
-                        "data": {"message": "Task failed. Check logs for details."},
-                        "session_id": session_id
-                    }
-                ),
-                loop
-            ).result()
+            await manager.send_message(
+                session_id,
+                {
+                    "type": "ERROR",
+                    "data": {"message": "Task failed. Check logs for details."},
+                    "session_id": session_id
+                }
+            )
     
     except Exception as e:
         asyncio.run_coroutine_threadsafe(
@@ -185,9 +174,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     "session_id": session_id
                 })
                 
-                # Run agent in background thread, passing the event loop
-                loop = asyncio.get_event_loop()
-                executor.submit(run_agent_task, session_id, task, start_url, loop)
+                # Run agent as async task (no thread needed!)
+                asyncio.create_task(run_agent_task(session_id, task, start_url))
             
             elif message_type == "APPROVAL":
                 # Handle approval response
@@ -212,80 +200,42 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Resume execution in background
                     session["waiting_for_approval"] = False
                     
-                    # Get the event loop
-                    loop = asyncio.get_event_loop()
-                    
-                    def resume_task():
+                    # Create async resume task
+                    async def resume_task():
                         agent = session["agent"]
                         state = session["state"]
                         
-                        # Resume the agent
-                        final_state = agent.resume(state)
+                        # Resume the agent (now async)
+                        final_state = await agent.resume(state)
                         session["state"] = final_state
                         session["status"] = final_state["status"]
                         
-                        # Send new messages
-                        for msg in final_state["messages"]:
-                            asyncio.run_coroutine_threadsafe(
-                                manager.send_message(
-                                    session_id,
-                                    {
-                                        "type": "LOG",
-                                        "data": {"message": msg},
-                                        "session_id": session_id
-                                    }
-                                ),
-                                loop
-                            ).result()
-                        
-                        # Check final status
-                        if final_state["status"] == "PAUSED":
-                            # Another approval needed
-                            asyncio.run_coroutine_threadsafe(
-                                manager.send_message(
-                                    session_id,
-                                    {
-                                        "type": "APPROVAL_REQ",
-                                        "data": {
-                                            "screenshot": final_state["screenshot"],
-                                            "action": final_state["next_action"],
-                                            "current_url": final_state["current_url"]
-                                        },
-                                        "session_id": session_id
-                                    }
-                                ),
-                                loop
-                            ).result()
-                            session["waiting_for_approval"] = True
-                        elif final_state["status"] == "DONE":
-                            asyncio.run_coroutine_threadsafe(
-                                manager.send_message(
-                                    session_id,
-                                    {
-                                        "type": "COMPLETE",
-                                        "data": {"message": "Task completed successfully!"},
-                                        "session_id": session_id
-                                    }
-                                ),
-                                loop
-                            ).result()
+                        # Check final status and send appropriate message
+                        if final_state["status"] == "DONE":
+                            await manager.send_message(
+                                session_id,
+                                {
+                                    "type": "COMPLETE",
+                                    "data": {"message": "Task completed successfully!"},
+                                    "session_id": session_id
+                                }
+                            )
                             # Cleanup browser
-                            agent.cleanup_browser()
+                            if final_state["status"] in ["DONE", "ERROR"]:
+                                await agent.cleanup_browser()
                         elif final_state["status"] == "ERROR":
-                            asyncio.run_coroutine_threadsafe(
-                                manager.send_message(
-                                    session_id,
-                                    {
-                                        "type": "ERROR",
-                                        "data": {"message": "Task failed after approval"},
-                                        "session_id": session_id
-                                    }
-                                ),
-                                loop
-                            ).result()
-                            agent.cleanup_browser()
+                            await manager.send_message(
+                                session_id,
+                                {
+                                    "type": "ERROR",
+                                    "data": {"message": "Task failed after approval"},
+                                    "session_id": session_id
+                                }
+                            )
+                            await agent.cleanup_browser()
                     
-                    executor.submit(resume_task)
+                    # Run as async task
+                    asyncio.create_task(resume_task())
                     
                 elif decision == "REJECT":
                     await websocket.send_json({

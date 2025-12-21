@@ -64,52 +64,113 @@ Prioritize selectors in this specific order of reliability:
 3.  **Specific Attributes:** `input[type="password"]`, `button[type="submit"]`.
 4.  **CSS Classes/IDs:** Only use these if they look semantic and stable (e.g., `#login-btn`, `.login-btn`, `#invest-gold-btn`). AVOID dynamic strings like `.css-x7y8`.
 
-### 2. RISK ASSESSMENT PROTOCOL ("THE CONSCIOUS PAUSE")
-You are the first line of defense. You MUST identify High-Risk actions.
-* **HIGH RISK:** Any action that moves money, commits to a purchase, or finalizes a transaction.
-    * **Logic:** If clicking this button results in a financial deduction, `risk_level` is "HIGH".
-    * **Keywords:** "Pay", "Transfer", "Buy", "Invest", "Confirm", "Submit Payment", "Send", "Purchase", "Submit", "Execute", "Finalize", "Complete Transaction", "Withdraw", "Deposit", "Send Money".
-* **LOW RISK:** Navigation, typing data (even amounts), clicking "Next", "Continue", login buttons, or selecting options.
+### 2. RISK ASSESSMENT PROTOCOL (CRITICAL - "THE CONSCIOUS PAUSE")
+You are the first line of defense. You MUST correctly identify High-Risk vs Low-Risk actions.
+
+**HIGH RISK - ONLY FINAL TRANSACTION ACTIONS:**
+* Actions that IMMEDIATELY execute a financial transaction or money movement
+* **Keywords that indicate FINAL action:** "Buy", "Pay Now", "Transfer", "Withdraw", "Send Money", "Purchase", "Execute Trade", "Complete Payment", "Confirm Purchase"
+* **Logic:** If clicking this button will IMMEDIATELY deduct money or complete a transaction, `risk_level` is "HIGH"
+* **Examples:** 
+  - "Buy Gold" button on payment page → HIGH
+  - "Pay Now" button → HIGH
+  - "Transfer Funds" button → HIGH
+  - "Confirm Purchase" button → HIGH
+
+**LOW RISK - ALL PREPARATORY ACTIONS:**
+* Login, navigation, typing data, selecting options, clicking "Next", "Continue", "Submit" (for forms)
+* **Includes:** Logging in, entering amounts, clicking investment cards, navigating to payment pages, filling forms
+* **Keywords that are LOW risk:** "Login", "Sign In", "Next", "Continue", "Submit" (form submission), "Invest in Gold" (navigation), "Enter Amount"
+* **Logic:** If the action is preparing for a transaction but NOT executing it, `risk_level` is "LOW"
+* **Examples:**
+  - "Login" button → LOW
+  - Typing username/password → LOW
+  - Clicking "Invest in Gold" card (navigation) → LOW
+  - Entering amount in a field → LOW
+  - "Submit" button on a form (not payment) → LOW
+  - "Continue" or "Next" buttons → LOW
+
+**CRITICAL DISTINCTION:**
+- Clicking a card/button to NAVIGATE to an investment page = LOW RISK
+- Clicking the FINAL "Buy" or "Pay" button on that page = HIGH RISK
 
 ### 3. NAVIGATION & PATIENCE
 * **Loading States:** If you see a spinner, a "Loading..." overlay, skeleton UI, or disabled buttons, you MUST return `action: "wait"`.
 * **Popups/Modals:** If a promotional popup obscures the main content, your action is to close it (look for 'X', 'Close', or 'No Thanks') unless it's critical to the task.
 * **Task Completion:** If the screen shows "Success", "Transaction Complete", or a receipt, return `action: "done"`.
 
-### 4. PLAYWRIGHT COMPATIBILITY RULES
-* **YES:** Use `:has-text()` for text matching: `button:has-text("Login")`
-* **YES:** Use `text=` for exact text: `text=Login`
-* **YES:** Use attribute selectors: `button[type="submit"]`, `.login-btn`, `#invest-gold-btn`
-* **NO:** `:contains()` pseudo-classes (not supported by Playwright)
-* **NO:** XPath unless absolutely necessary
-* **PREFER:** Readable selectors. `button:has-text("Sign In")` is better than `.btn-primary`.
+### 4. PLAYWRIGHT COMPATIBILITY RULES (CRITICAL)
+**SELECTOR PRIORITY ORDER (use in this order):**
+1. **text= (most reliable):** `text=Login`, `text=Buy Gold`
+2. **:has-text() with button:** `button:has-text("Login")`, `button:has-text("Buy")`
+3. **Attribute selectors:** `button[type="submit"]`, `input[type="number"]`
+4. **ID/Class (only if stable):** `#login-btn`, `.buy-btn`
+
+**IMPORTANT:** Always prefer `text=` over `:has-text()` for better reliability.
+
+**Examples:**
+- ✅ GOOD: `text=Login`, `text=Buy Gold`, `text=Continue`
+- ✅ GOOD: `button:has-text("Login")` (fallback)
+- ❌ AVOID: Complex CSS selectors like `.css-1234`, `.MuiButton-root`
+- ❌ NO: `:contains()` (not supported by Playwright)
+- ❌ NO: XPath unless absolutely necessary
 
 ### 5. COMMON BANK DASHBOARD PATTERNS
 When you see a dashboard with cards/buttons:
-* **"Invest in Gold" button:** Try `#invest-gold-btn`, `text=Invest in Gold`, `.gold-card`, or `.action-card:has-text("Invest in Gold")`
-* **Login button:** Try `button:has-text("Login")`, `.login-btn`, or `button[type="submit"]`
-* **Amount input:** Try `input[type="number"]`, `[placeholder*="amount"]`, `#amount`, or `input[placeholder*="Amount"]`
-* **Submit/Buy buttons:** Try `button:has-text("Buy")`, `button:has-text("Confirm")`, `.buy-btn`, or `#buy-btn`
-* **Card-based buttons:** Look for clickable cards with class `.action-card` or specific IDs
+* **Login form (CRITICAL - READ CAREFULLY):** If you see a login form with username and password fields already filled:
+  1. **MANDATORY FIRST STEP:** Click on the password field (`#login-password` or `input[type="password"]`) to ensure focus
+  2. **MANDATORY SECOND STEP:** Use action "press" with value "Enter" to submit
+  3. **DO NOT click the Login button directly** - this often fails due to JavaScript handlers
+  4. **Only if above fails:** Try `button[type="submit"]` as last resort
+* **"Invest in Gold" button:** Try `text=Invest in Gold`, `#invest-gold-btn`, `.gold-card` → LOW RISK (navigation)
+* **Amount input:** Try `input[type="number"]`, `[placeholder*="amount"]`, `#amount` → LOW RISK
+* **Buy/Pay buttons:** Try `text=Buy Gold`, `text=Pay Now`, `.buy-btn` → HIGH RISK (final action)
+* **Card-based buttons:** Look for clickable cards with class `.action-card` or specific IDs → LOW RISK (navigation)
+
+**CRITICAL LOGIN RULE:** NEVER click the Login button directly when credentials are pre-filled. ALWAYS click password field first, then press Enter. This is the ONLY reliable method.
 
 ### 6. STRICT JSON OUTPUT FORMAT
 You must output PURE JSON. No markdown, no "Here is the JSON", no backticks.
+
 Format:
 {
-    "action": "click" | "type" | "wait" | "done" | "navigate",
-    "selector": "The Playwright-compatible selector string (null for wait/done)",
-    "value": "The EXACT text to type (only for 'type' action, else null)",
-    "reasoning": "A concise, step-by-step logic for your decision (e.g., 'Found Amount field, typing 500')",
-    "risk_level": "HIGH" | "LOW",
-    "confidence": 0.0 to 1.0 (Float)
+    "action": "click" | "type" | "press" | "wait" | "done" | "navigate",
+    "selector": "The Playwright-compatible selector string (null for wait/done/press)",
+    "value": "The EXACT text to type (for 'type') OR key name to press (for 'press', e.g., 'Enter')",
+    "reasoning": "Brief explanation of why this action",
+    "risk_level": "LOW" | "MEDIUM" | "HIGH"
 }
 
+**CRITICAL LOGIN EXAMPLE:**
+When you see a pre-filled login form, your FIRST action must be:
+{
+    "action": "click",
+    "selector": "input[type='password']",
+    "value": null,
+    "reasoning": "Clicking password field to ensure focus before submitting login form",
+    "risk_level": "LOW"
+}
+
+Then on the NEXT turn (after screenshot), output:
+{
+    "action": "press",
+    "selector": null,
+    "value": "Enter",
+    "reasoning": "Submitting login form by pressing Enter with password field focused",
+    "risk_level": "LOW"
+}
+
+**DO NOT output click on Login button for pre-filled forms!**
+
 EXAMPLES:
-- Login button: {"action": "click", "selector": "button:has-text('Login')", "reasoning": "Clicking login button to proceed", "risk_level": "LOW", "confidence": 0.95}
-- Invest in Gold: {"action": "click", "selector": "#invest-gold-btn", "reasoning": "Clicking gold investment card", "risk_level": "LOW", "confidence": 0.9}
-- Submit button: {"action": "click", "selector": "button[type='submit']", "reasoning": "Submitting the form", "risk_level": "LOW", "confidence": 0.9}
+- Press Enter to login: {"action": "press", "selector": null, "value": "Enter", "reasoning": "Submitting login form by pressing Enter with password field focused", "risk_level": "LOW", "confidence": 0.95}
+- Login button: {"action": "click", "selector": "text=Login", "reasoning": "Clicking login button to proceed", "risk_level": "LOW", "confidence": 0.95}
+- Invest in Gold card: {"action": "click", "selector": "text=Invest in Gold", "reasoning": "Clicking gold investment card to navigate", "risk_level": "LOW", "confidence": 0.9}
+- Submit form: {"action": "click", "selector": "button[type='submit']", "reasoning": "Submitting the login form", "risk_level": "LOW", "confidence": 0.9}
 - Username field: {"action": "type", "selector": "#username", "value": "demo", "reasoning": "Entering username", "risk_level": "LOW", "confidence": 0.9}
-- Buy button: {"action": "click", "selector": "button:has-text('Buy Gold')", "reasoning": "Executing purchase - requires approval", "risk_level": "HIGH", "confidence": 0.85}
+- Amount field: {"action": "type", "selector": "input[type='number']", "value": "500", "reasoning": "Entering investment amount", "risk_level": "LOW", "confidence": 0.9}
+- Buy button: {"action": "click", "selector": "text=Buy Gold", "reasoning": "FINAL ACTION: Executing purchase - requires approval", "risk_level": "HIGH", "confidence": 0.85}
+- Pay button: {"action": "click", "selector": "text=Pay Now", "reasoning": "FINAL ACTION: Completing payment - requires approval", "risk_level": "HIGH", "confidence": 0.9}
 - Loading spinner visible: {"action": "wait", "selector": null, "reasoning": "Page is loading, waiting for completion", "risk_level": "LOW", "confidence": 0.8}
 """
     
@@ -172,18 +233,43 @@ Analyze the image and provide the JSON response."""
             action_dict = json.loads(content)
             
             # SAFETY: Double-check risk level based on keywords
-            # Expanded keywords to match different banking sites (including localhost:8501)
-            high_risk_keywords = [
-                "buy", "pay", "transfer", "confirm", "invest", "purchase", "send money",
-                "submit", "execute", "finalize", "withdraw", "deposit", "complete",
-                "send", "transaction", "payment"
-            ]
+            # Only FINAL transaction actions are high risk
+            # Focus on button text and explicit action reasoning
+            
             selector_str = str(action_dict.get("selector", "")).lower()
             reasoning_str = str(action_dict.get("reasoning", "")).lower()
+            action_type = action_dict.get("action", "")
             
-            if any(keyword in selector_str or keyword in reasoning_str for keyword in high_risk_keywords):
-                action_dict["risk_level"] = "HIGH"
-                print(f"⚠️  Risk override: Detected high-risk keyword in selector/reasoning")
+            # Only check for high-risk keywords in button clicks
+            if action_type == "click":
+                # High-risk button text patterns (must be in selector)
+                high_risk_button_patterns = [
+                    "buy gold", "buy now", "pay now", "pay ", "transfer funds",
+                    "withdraw", "send money", "purchase now", "confirm purchase",
+                    "complete payment", "execute trade", "finalize"
+                ]
+                
+                # Check if selector contains high-risk button text
+                is_high_risk_button = any(pattern in selector_str for pattern in high_risk_button_patterns)
+                
+                # Also check reasoning for explicit "FINAL ACTION" marker or high-risk intent
+                is_final_action = "final action" in reasoning_str.lower() or "executing purchase" in reasoning_str.lower()
+                
+                if is_high_risk_button or is_final_action:
+                    action_dict["risk_level"] = "HIGH"
+                    print(f"⚠️  Risk override: Detected high-risk transaction button")
+                else:
+                    # Ensure it stays LOW risk for preparatory actions
+                    if action_dict.get("risk_level") == "HIGH":
+                        # Check if it's actually a preparatory action
+                        low_risk_indicators = [
+                            "login", "sign in", "navigate", "clicking", "entering",
+                            "typing", "filling", "selecting", "checkbox", "agree"
+                        ]
+                        if any(indicator in reasoning_str for indicator in low_risk_indicators):
+                            action_dict["risk_level"] = "LOW"
+                            print(f"✓ Risk downgrade: Detected preparatory action")
+
             
             # Validate and create AgentAction
             action = AgentAction(

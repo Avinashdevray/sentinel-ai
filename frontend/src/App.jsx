@@ -21,9 +21,11 @@ function App() {
         if (messages.length === 0) return;
 
         const latestMessage = messages[messages.length - 1];
+        console.log('📨 Received message:', latestMessage); // Debug log
 
         switch (latestMessage.type) {
             case 'LOG':
+                console.log('📝 Adding log message:', latestMessage.data.message); // Debug log
                 setLogMessages(prev => [...prev, latestMessage.data.message]);
                 break;
 

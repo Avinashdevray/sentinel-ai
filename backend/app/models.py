@@ -13,6 +13,7 @@ class ActionType(str, Enum):
     """Types of actions the agent can take"""
     CLICK = "click"
     TYPE = "type"
+    PRESS = "press"
     WAIT = "wait"
     DONE = "done"
     NAVIGATE = "navigate"
