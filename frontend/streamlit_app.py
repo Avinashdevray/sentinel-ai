@@ -199,7 +199,13 @@ def login_page():
 
 def dashboard_page():
     """Main dashboard"""
-    st.markdown(f"<h1 class='main-header'>Welcome back, {st.session_state.username}! 👋</h1>", unsafe_allow_html=True)
+    # Fetch latest profile for greeting
+    profile_data = get_user_profile()
+    display_name = st.session_state.username
+    if profile_data and "user" in profile_data:
+        display_name = profile_data["user"].get("full_name") or st.session_state.username
+
+    st.markdown(f"<h1 class='main-header'>Welcome back, {display_name}! 👋</h1>", unsafe_allow_html=True)
     
     # Get accounts
     accounts_data = api_request("/api/accounts")
@@ -278,24 +284,21 @@ def dashboard_page():
         with col3:
             st.markdown("### 🔄 Transfer")
             
-            # Using session state to handle button clicks filling the input
-            if 'transfer_to' not in st.session_state:
-                st.session_state.transfer_to = ""
-            
             # Favorites (Outside Form)
             st.write("Favorites:")
             col_fav1, col_fav2 = st.columns(2)
             
+            # Directly update the widget key 'to_acc_input'
             if col_fav1.button("❤️ Mom", use_container_width=True):
-                st.session_state.transfer_to = "ACCMOM123"
+                st.session_state.to_acc_input = "ACCMOM123"
             if col_fav2.button("💙 Dad", use_container_width=True):
-                st.session_state.transfer_to = "ACCDAD456"
+                st.session_state.to_acc_input = "ACCDAD456"
 
             with st.form("transfer_form"):
                 from_account = st.selectbox("From Account", [acc["account_number"] for acc in accounts], key="from_acc")
                 
-                # Input defaults to session state value
-                to_account = st.text_input("To Account Number", value=st.session_state.transfer_to, key="to_acc_input")
+                # Input key matches the one we updated above
+                to_account = st.text_input("To Account Number", key="to_acc_input")
                 
                 amount = st.number_input(f"Amount ({currency_view})", min_value=0.01, step=0.01, key="transfer_amt")
                 description = st.text_input("Description (optional)", key="transfer_desc")
@@ -404,8 +407,14 @@ def bill_payments_page():
     }
     
     # Auto-fill logic based on category
+    # Fetch real user profile for mobile number
+    profile_data = get_user_profile()
+    real_mobile = "1234567890" # Default fallback
+    if profile_data and "user" in profile_data:
+        real_mobile = profile_data["user"].get("mobile_number", "1234567890")
+
     user_consumer_data = {
-        "Utilities": "1234567890",
+        "Utilities": real_mobile,
         "Credit Cards": "4321 8765 2109 5678",
         "Insurance": "POL-98765432",
         "Subscriptions": "user@subscription.com"
@@ -500,7 +509,7 @@ def profile_page():
             
             with col1:
                 st.image("https://img.icons8.com/color/480/user-male-circle--v1.png", width=150)
-                st.markdown(f"### {user.get('username', 'User')}")
+
             
             with col2:
                 st.subheader("Personal Details")
