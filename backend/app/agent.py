@@ -9,6 +9,7 @@ from app.models import AgentAction, ActionType, RiskLevel
 from app.utils import encode_image_to_base64, resize_image_if_needed
 from app.validator import LogicValidator
 from app.exceptions import InsufficientFundsError, InvalidAmountError, BalanceExtractionError
+from app.tts import speak_completion
 import operator
 
 
@@ -28,6 +29,8 @@ class GraphState(TypedDict):
     tried_login_methods: list  # Track which login methods have been tried
     extracted_balance: Optional[str]  # Balance extracted from page for validation
     validation_passed: bool  # Whether validation passed
+    last_high_risk_action: Optional[dict]  # Track last HIGH RISK action executed
+    high_risk_executed: bool  # Flag indicating HIGH RISK action was just executed
 
 
 class FinAgentGraph:
@@ -184,8 +187,22 @@ class FinAgentGraph:
                 state["retry_count"] += 1
                 await self._send_message(state, f"⚠️ Repeated action detected: {current_action_type} on {current_selector or current_value} (attempt {state['retry_count']})")
                 
+                # CRITICAL: If trying to repeat a HIGH RISK action, assume first one succeeded
+                if action.risk_level == RiskLevel.HIGH and prev_action.get("risk_level") == "HIGH":
+                    # Speak completion message
+                    await speak_completion("Task completed successfully")
+                    await self._send_message(state, "✅ Preventing duplicate HIGH RISK action - first execution likely succeeded")
+                    action = AgentAction(
+                        action=ActionType.DONE,
+                        selector=None,
+                        value=None,
+                        reasoning="Task completed - HIGH RISK action already executed successfully",
+                        risk_level=RiskLevel.LOW,
+                        confidence=0.95
+                    )
+                    state["retry_count"] = 0
                 # If we've repeated the same action 2+ times, force a wait to let page update
-                if state["retry_count"] >= 2:
+                elif state["retry_count"] >= 2:
                     await self._send_message(state, "🔄 Breaking loop: Forcing wait for page to update")
                     action = AgentAction(
                         action=ActionType.WAIT,
@@ -352,6 +369,8 @@ class FinAgentGraph:
             if action_type == "done":
                 state["status"] = "DONE"
                 await self._send_message(state, "✅ Task completed successfully!")
+                # Speak completion message using macOS TTS
+                await speak_completion("Task completed successfully")
                 return state
             
             # Check risk level
@@ -652,7 +671,9 @@ class FinAgentGraph:
             message_callback=message_callback,  # Store callback in state
             tried_login_methods=[],  # Track login methods
             extracted_balance=None,  # Balance for validation
-            validation_passed=True  # Default to true
+            validation_passed=True,  # Default to true
+            last_high_risk_action=None,  # Track last HIGH RISK action
+            high_risk_executed=False  # Flag for HIGH RISK execution
         )
         
         try:

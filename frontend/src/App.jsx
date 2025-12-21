@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWebSocket } from './hooks/useSocket';
 import { LiveLog } from './components/LiveLog';
 import { SafetyModal } from './components/SafetyModal';
+import VoiceRecorder from './components/VoiceRecorder';
 import './App.css';
 
 const WS_URL = 'ws://localhost:8000/ws';
@@ -181,15 +182,23 @@ function App() {
 
                         <div className="form-group">
                             <label htmlFor="task-input">Task Description</label>
-                            <textarea
-                                id="task-input"
-                                value={taskInput}
-                                onChange={(e) => setTaskInput(e.target.value)}
-                                placeholder="Example: Login with username 'demo' and password 'password', then invest 500 rupees in gold"
-                                disabled={isRunning}
-                                className="textarea-field"
-                                rows={4}
-                            />
+                            <div className="task-input-container">
+                                <textarea
+                                    id="task-input"
+                                    value={taskInput}
+                                    onChange={(e) => setTaskInput(e.target.value)}
+                                    placeholder="Example: Login and invest 500 rupees in gold (or speak in Hindi/Tamil/other Indian languages)"
+                                    disabled={isRunning}
+                                    className="textarea-field"
+                                    rows={4}
+                                />
+                                <VoiceRecorder
+                                    onTranscript={(text, language) => {
+                                        setTaskInput(text);
+                                        console.log(`🎤 Voice input detected (${language}): ${text}`);
+                                    }}
+                                />
+                            </div>
                         </div>
 
                         <button

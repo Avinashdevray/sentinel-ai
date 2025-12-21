@@ -5,12 +5,16 @@ import asyncio
 from typing import Dict
 from app.agent import FinAgentGraph
 from app.models import WebSocketMessage, TaskRequest, ApprovalResponse
+from app.voice import router as voice_router
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
 
 app = FastAPI(title="FinAgent Sentinel API")
+
+# Include voice router
+app.include_router(voice_router)
 
 # Session state constants
 SESSION_STATE_ACTIVE = "active"

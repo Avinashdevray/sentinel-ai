@@ -34,3 +34,6 @@ test-results/
 
 # Secrets
 backend/service-account.json
+
+# Whisper model cache
+backend/models/

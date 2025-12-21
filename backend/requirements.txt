@@ -9,3 +9,8 @@ playwright==1.48.0
 pydantic==2.9.2
 pydantic-settings==2.6.1
 pillow==11.0.0
+
+# Voice features
+openai-whisper
+gTTS>=2.4.0
+
