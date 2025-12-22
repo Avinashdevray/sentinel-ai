@@ -197,6 +197,66 @@ def login_page():
                         st.success("Registration successful!")
                         st.rerun()
 
+                    if response:
+                        st.session_state.token = response["token"]
+                        st.session_state.user_id = response["user_id"]
+                        st.session_state.username = new_username
+                        st.success("Registration successful!")
+                        st.rerun()
+
+def transfer_page():
+    """Transfer Page"""
+    st.markdown("<h1 class='main-header'>💸 Fund Transfer</h1>", unsafe_allow_html=True)
+    
+    accounts_data = api_request("/api/accounts")
+    if not accounts_data or not accounts_data.get("accounts"):
+        st.error("No accounts found.")
+        return
+    accounts = accounts_data["accounts"]
+
+    currency_view = st.radio("Currency View", ["INR", "USD"], horizontal=True, key="trans_curr")
+
+    # Favorites
+    st.markdown("### Quick Favorites")
+    col_fav1, col_fav2 = st.columns(2)
+    
+    # Directly update the widget key 'to_acc_input'
+    if col_fav1.button("❤️ Mom", use_container_width=True):
+        st.session_state.to_acc_input = "ACCMOM123"
+    if col_fav2.button("💙 Dad", use_container_width=True):
+        st.session_state.to_acc_input = "ACCDAD456"
+
+    st.divider()
+
+    with st.form("transfer_form"):
+        st.markdown("### New Transfer")
+        from_account = st.selectbox("From Account", [acc["account_number"] for acc in accounts], key="from_acc")
+        
+        # Input key matches the one we updated above
+        to_account = st.text_input("To Account Number", key="to_acc_input")
+        
+        amount = st.number_input(f"Amount ({currency_view})", min_value=0.01, step=0.01, key="transfer_amt")
+        description = st.text_input("Description (optional)", key="transfer_desc")
+        
+        if st.form_submit_button("Transfer Now", use_container_width=True):
+            final_to_account = to_account
+            if not final_to_account:
+                st.error("Please enter a destination account number.")
+            else:
+                amount_usd = amount / USD_TO_INR if currency_view == "INR" else amount
+
+                response = api_request("/api/transfer", "POST", {
+                    "from_account": from_account,
+                    "to_account": final_to_account,
+                    "amount": amount_usd,
+                    "description": description
+                })
+                
+                if response:
+                    st.success(f"✅ Transferred {format_currency(amount_usd, currency_view)}! New balance: {format_currency(response['new_balance'], currency_view)}")
+                    time.sleep(1)
+                    st.rerun()
+
 def dashboard_page():
     """Main dashboard"""
     # Fetch latest profile for greeting
@@ -239,7 +299,7 @@ def dashboard_page():
         
         # Quick actions
         st.subheader("Quick Actions")
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         
         with col1:
             with st.form("deposit_form"):
@@ -280,49 +340,6 @@ def dashboard_page():
                         st.success(f"✅ Withdrew {format_currency(amount_usd, currency_view)}! New balance: {format_currency(response['new_balance'], currency_view)}")
                         time.sleep(1)
                         st.rerun()
-        
-        with col3:
-            st.markdown("### 🔄 Transfer")
-            
-            # Favorites (Outside Form)
-            st.write("Favorites:")
-            col_fav1, col_fav2 = st.columns(2)
-            
-            # Directly update the widget key 'to_acc_input'
-            if col_fav1.button("❤️ Mom", use_container_width=True):
-                st.session_state.to_acc_input = "ACCMOM123"
-            if col_fav2.button("💙 Dad", use_container_width=True):
-                st.session_state.to_acc_input = "ACCDAD456"
-
-            with st.form("transfer_form"):
-                from_account = st.selectbox("From Account", [acc["account_number"] for acc in accounts], key="from_acc")
-                
-                # Input key matches the one we updated above
-                to_account = st.text_input("To Account Number", key="to_acc_input")
-                
-                amount = st.number_input(f"Amount ({currency_view})", min_value=0.01, step=0.01, key="transfer_amt")
-                description = st.text_input("Description (optional)", key="transfer_desc")
-                
-                if st.form_submit_button("Transfer", use_container_width=True):
-                    # Use the widget value directly
-                    final_to_account = to_account
-                    if not final_to_account:
-                        st.error("Please enter a destination account number.")
-                    else:
-                        # Convert to USD for backend if INR selected
-                        amount_usd = amount / USD_TO_INR if currency_view == "INR" else amount
-
-                        response = api_request("/api/transfer", "POST", {
-                            "from_account": from_account,
-                            "to_account": final_to_account,
-                            "amount": amount_usd,
-                            "description": description
-                        })
-                        
-                        if response:
-                            st.success(f"✅ Transferred {format_currency(amount_usd, currency_view)}! New balance: {format_currency(response['new_balance'], currency_view)}")
-                            time.sleep(1)
-                            st.rerun()
         
         st.divider()
         
@@ -430,50 +447,38 @@ def bill_payments_page():
         default_consumer_id = user_consumer_data.get(selected_cat, "")
         consumer_id = st.text_input("Consumer Number / Policy No / Mobile", value=default_consumer_id)
         
-        # Fetch Bill button
-        if st.button("Fetch Bill", use_container_width=True):
-            if consumer_id:
-                st.session_state.fetched_bill = True
-                # Mock bill amounts based on biller
-                bill_amounts = {
-                    "BESCOM (Electricity)": random.randint(800, 2500),
-                    "BWSSB (Water)": random.randint(300, 800),
-                    "Indane Gas": random.randint(600, 1200),
-                    "Mahanagar Gas": random.randint(500, 1500),
-                    "HDFC Bank CC": random.randint(5000, 25000),
-                    "SBI Card": random.randint(3000, 20000),
-                    "ICICI Bank CC": random.randint(4000, 22000),
-                    "Amex": random.randint(8000, 35000),
-                    "LIC": random.randint(2000, 8000),
-                    "HDFC Life": random.randint(1500, 6000),
-                    "ICICI Prudential": random.randint(1800, 7000),
-                    "Star Health": random.randint(2500, 9000),
-                    "Netflix": 649,
-                    "Amazon Prime": 1499,
-                    "Hotstar": 1499,
-                    "Spotify": 119
-                }
-                st.session_state.bill_amount = bill_amounts.get(biller_name, 500.0)
-                st.session_state.due_date = "2025-12-25"
-            else:
-                st.error("Please enter Consumer Number first")
+        # Calculate Mock Bill Amount Automatically
+        bill_amounts = {
+            "BESCOM (Electricity)": random.randint(800, 2500),
+            "BWSSB (Water)": random.randint(300, 800),
+            "Indane Gas": random.randint(600, 1200),
+            "Mahanagar Gas": random.randint(500, 1500),
+            "HDFC Bank CC": random.randint(5000, 25000),
+            "SBI Card": random.randint(3000, 20000),
+            "ICICI Bank CC": random.randint(4000, 22000),
+            "Amex": random.randint(8000, 35000),
+            "LIC": random.randint(2000, 8000),
+            "HDFC Life": random.randint(1500, 6000),
+            "ICICI Prudential": random.randint(1800, 7000),
+            "Star Health": random.randint(2500, 9000),
+            "Netflix": 649,
+            "Amazon Prime": 1499,
+            "Hotstar": 1499,
+            "Spotify": 119
+        }
+        # Use simple hash or random seed based on day to keep it semi-stable if needed, but random is fine for demo
+        calculated_amount = float(bill_amounts.get(biller_name, 500.0))
+        due_date = "2025-12-25"
         
-        # Show fetched bill details
-        if st.session_state.get('fetched_bill', False):
-            st.success("✅ Bill Fetched Successfully!")
-            st.info(f"**Bill Amount:** ₹{st.session_state.bill_amount:,.2f}")
-            st.info(f"**Due Date:** {st.session_state.due_date}")
+        st.info(f"**Due Date:** {due_date}")
         
     with col_pay:
              with st.form("bill_pay_form"):
                 st.write(f"Paying **{biller_name}**")
                 pay_account = st.selectbox("Pay From", [acc["account_number"] for acc in accounts], format_func=lambda x: f"{x} (Bal: ₹{convert_currency(next((a['balance'] for a in accounts if a['account_number'] == x), 0)):,.2f})")
                 
-                # Use fetched amount or allow manual entry
-                if st.session_state.get('fetched_bill', False):
-                    bill_amount = st.number_input("Bill Amount (₹)", min_value=1.0, value=float(st.session_state.bill_amount))
-                else:
-                    bill_amount = st.number_input("Bill Amount (₹)", min_value=1.0, value=500.0)
+                # Auto-updated amount
+                bill_amount = st.number_input("Bill Amount (₹)", min_value=1.0, value=calculated_amount)
                 
                 if st.form_submit_button("Pay Bill", use_container_width=True):
                      if not consumer_id:
@@ -490,8 +495,6 @@ def bill_payments_page():
                         if response:
                             st.success(f"✅ Paid ₹{bill_amount:.2f} to {biller_name}!")
                             st.balloons()
-                            # Clear fetched bill
-                            st.session_state.fetched_bill = False
                             time.sleep(2)
                             st.rerun()
 
@@ -596,9 +599,9 @@ def investment_page():
                     amount_inr = grams * current_price
                     st.info(f"Total Cost: ₹{amount_inr:,.2f}")
                 
-                terms = st.checkbox("I agree to the Terms & Conditions")
+                terms = True
                 
-                if st.button("Buy Gold", disabled=not terms, use_container_width=True):
+                if st.button("Buy Gold", use_container_width=True):
                     if not terms:
                         st.error("Please accept T&C")
                     else:
@@ -697,7 +700,11 @@ def main():
         if st.session_state.token:
             st.success(f"Logged in as: {st.session_state.username}")
             
-            nav = st.radio("Navigation", ["Dashboard", "Bill Payments", "Investments", "Profile"])
+            st.success(f"Logged in as: {st.session_state.username}")
+            
+            nav = st.radio("Navigation", ["Dashboard", "Transfer", "Bill Payments", "Investments", "Profile"])
+            
+            st.divider()
             
             st.divider()
             
@@ -715,6 +722,8 @@ def main():
     if st.session_state.token:
         if nav == "Dashboard":
             dashboard_page()
+        elif nav == "Transfer":
+            transfer_page()
         elif nav == "Investments":
             investment_page()
         elif nav == "Bill Payments":
