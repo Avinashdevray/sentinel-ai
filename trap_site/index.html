@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickLoan Pro - Fast Cash Now!</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+        }
+
+        .urgency-banner {
+            background: #dc2626;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a365d;
+        }
+
+        .cta-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #1d4ed8;
+        }
+
+        .fine-print {
+            color: #9ca3af;
+            font-size: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #countdown {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="urgency-banner">
+        ⚠️ OFFER EXPIRING SOON! <span id="countdown">05:00</span>
+    </div>
+    <div class="container">
+        <h1>Get Your Personal Loan Today!</h1>
+        <p>Approved in minutes. No credit check required.</p>
+        <h2 style="color: #059669;">Only $10.00/month*</h2>
+
+        <div style="margin: 30px 0; padding: 20px; background: #eff6ff; border-radius: 8px;">
+            <h3>Why choose QuickLoan Pro?</h3>
+            <ul>
+                <li>Instant Transfer</li>
+                <li>Low Interest Rates</li>
+                <li>Secure Platform</li>
+            </ul>
+        </div>
+
+        <button class="cta-button" onclick="window.location.href='checkout.html'">Get Your Loan Now</button>
+
+        <p class="fine-print">*Terms apply. Additional processing fees may apply. By clicking above you agree to our
+            terms.</p>
+    </div>
+
+    <script>
+        // FAKE URGENCY TIMER DARK PATTERN
+        function startTimer(duration, display) {
+            var timer = duration, minutes, seconds;
+            setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    timer = duration;
+                }
+                // Sets localStorage to trick validatiors but also resets on refresh to be annoying
+                localStorage.setItem('urgencyTimer', timer);
+            }, 1000);
+        }
+
+        window.onload = function () {
+            // Always reset to 4:59 on load to simulated "False Urgency"
+            var fiveMinutes = 60 * 5 - 1,
+                display = document.querySelector('#countdown');
+            startTimer(fiveMinutes, display);
+        };
+    </script>
+</body>
+
+</html>

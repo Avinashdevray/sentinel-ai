@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - QuickLoan Pro</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1a365d;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .line-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+
+        .line-item.hidden-fee {
+            color: #9ca3af;
+            font-size: 0.8em;
+            /* Tiny font */
+            margin: 5px 0;
+        }
+
+        .line-item.hidden-fee .price {
+            color: #9ca3af;
+        }
+
+        .total {
+            border-top: 2px solid #1a365d;
+            margin-top: 20px;
+            padding-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            color: #1a365d;
+        }
+
+        .cta-button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .cta-button:hover {
+            background: #047857;
+        }
+
+        .recurring-notice {
+            font-size: 0.8em;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Confirm Your Loan</h1>
+
+        <div class="line-item">
+            <span>Personal Loan (Monthly)</span>
+            <span class="price">$10.00</span>
+        </div>
+
+        <!-- DRIP PRICING DARK PATTERNS: Hidden fees appearing only at checkout -->
+        <div class="line-item hidden-fee" style="color: #cbd5e1;"> <!-- Low contrast -->
+            <span>Processing Fee (One-time)</span>
+            <span class="price">$25.00</span>
+        </div>
+
+        <div class="line-item hidden-fee" style="color: #cbd5e1;">
+            <span>Secure Service Charge</span>
+            <span class="price">$5.00</span>
+        </div>
+
+        <div class="total">
+            <span>Total Due Now</span>
+            <span id="total-amount">$40.00</span>
+        </div>
+
+        <button class="cta-button" onclick="window.location.href='trial.html'">Confirm Payment</button>
+
+        <p class="recurring-notice">By confirming, you authorize a one-time charge of $40.00 followed by $10.00/mo.</p>
+    </div>
+</body>
+
+</html>

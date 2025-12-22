@@ -375,6 +375,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Cleanup browser
                             if final_state["status"] in ["DONE", "ERROR"]:
                                 await agent.cleanup_browser()
+                            await agent.cleanup_browser()
                         elif final_state["status"] == "ERROR":
                             await manager.send_message(
                                 session_id,
@@ -385,6 +386,21 @@ async def websocket_endpoint(websocket: WebSocket):
                                 }
                             )
                             await agent.cleanup_browser()
+                        elif final_state["status"] == "PAUSED":
+                            # Resend approval request for the new action
+                            session["waiting_for_approval"] = True
+                            await manager.send_message(
+                                session_id,
+                                {
+                                    "type": "APPROVAL_REQ",
+                                    "data": {
+                                        "screenshot": final_state.get("screenshot"),
+                                        "action": final_state.get("next_action"),
+                                        "current_url": final_state.get("current_url")
+                                    },
+                                    "session_id": session_id
+                                }
+                            )
                     
                     # Run as async task
                     asyncio.create_task(resume_task())

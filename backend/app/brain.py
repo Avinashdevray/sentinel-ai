@@ -6,10 +6,13 @@ from pathlib import Path
 from langchain_google_vertexai import ChatVertexAI
 from langchain.schema import HumanMessage
 from dotenv import load_dotenv
+
 from app.models import AgentAction, ActionType, RiskLevel
+from app.guardian_prompts import GUARDIAN_SYSTEM_PROMPT, QUICKLOAN_WORKFLOW_PROMPT
 
 # Load environment variables
 load_dotenv()
+
 
 
 class VisionBrain:
@@ -98,6 +101,20 @@ You are the first line of defense. You MUST correctly identify High-Risk vs Low-
 * **Loading States:** If you see a spinner, a "Loading..." overlay, skeleton UI, or disabled buttons, you MUST return `action: "wait"`.
 * **Popups/Modals:** If a promotional popup obscures the main content, your action is to close it (look for 'X', 'Close', or 'No Thanks') unless it's critical to the task.
 * **Task Completion:** If the screen shows "Success", "Transaction Complete", or a receipt, return `action: "done"`.
+
+### 4. GUARDIAN ANGEL PROTOCOL (FOR LOAN/TRAP SITES)
+When the user asks for a loan or visits a potential trap site (like QuickLoan Pro), you switch to Guardian Angel mode.
+You MUST follow the specific workflow defined in the prompt.
+- Detect false urgency timers (Timer resets = Fake)
+- Detect drip pricing (Hidden fees)
+- Detect forced continuity (Terms & Conditions)
+- Pause for User Approval on HIGH/CRITICAL risks (Checkout, Virtual Card generation)
+
+{GUARDIAN_SYSTEM_PROMPT}
+
+If the task involves "QuickLoan" or "get me a loan":
+{QUICKLOAN_WORKFLOW_PROMPT}
+
 
 ### 4. PLAYWRIGHT COMPATIBILITY RULES (CRITICAL)
 **SELECTOR PRIORITY ORDER (use in this order):**
